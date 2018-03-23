@@ -17,6 +17,8 @@ def mocha_test(
         size = "small",
         # Test visibility
         visibility = None,
+        #symlink
+        symlink = False,
         # Remainder of args go to 'node_module'
         **kwargs):
 
@@ -39,6 +41,7 @@ def mocha_test(
         target = name + "_modules",
         visibility = visibility,
         deps = deps + [name + "_module"],
+        symlink = symlink
     )
 
     entrypoint = [

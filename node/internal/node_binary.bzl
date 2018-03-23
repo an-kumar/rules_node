@@ -236,6 +236,7 @@ def node_test(name = None,
               deps = [],
               size = None,
               visibility = None,
+              symlink = False,
               **kwargs):
 
     if not entrypoint:
@@ -255,6 +256,7 @@ def node_test(name = None,
         name = name + '_modules',
         deps = deps + [entrypoint],
         target = name + '_files',
+        symlink = symlink
     )
         
     _node_test(
