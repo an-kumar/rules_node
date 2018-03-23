@@ -135,15 +135,22 @@ def _node_module_impl(ctx):
         
     package_json = ctx.file.package_json
 
+    ignore = False
+    if package_json:
+        dst = ctx.new_file("%s/package.json" % name)
+        outputs.append(_copy_file(ctx, package_json, dst))
+        ignore = True
+
     # The presence of an index file suppresses creation of the
     # package.json file, if not already provided and no 'main' file is
     # provided.
     if len(files) > 0 and not package_json:
         if ctx.attr.main or not ctx.file.index:
             package_json = _create_package_json(ctx, name, files, executables)
-    if package_json:
-        dst = ctx.new_file("%s/package.json" % name)
-        outputs.append(_copy_file(ctx, package_json, dst))
+
+    if package_json and not ignore:
+      outputs.append(package_json)
+    
 
     root_file = package_json or ctx.file.index
     if len(files) > 0 and not root_file:
