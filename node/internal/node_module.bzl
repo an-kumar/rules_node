@@ -142,7 +142,8 @@ def _node_module_impl(ctx):
         if ctx.attr.main or not ctx.file.index:
             package_json = _create_package_json(ctx, name, files, executables)
     if package_json:
-        outputs.append(package_json)
+        dst = ctx.new_file("%s/package.json" % name)
+        outputs.append(_copy_file(ctx, package_json, dst))
 
     root_file = package_json or ctx.file.index
     if len(files) > 0 and not root_file:
