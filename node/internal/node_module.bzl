@@ -122,6 +122,70 @@ def _copy_file(ctx, src, dst):
     )
     return dst
 
+def _get_dirpath(name, file):
+  parts = file.path.partition("/%s/" % name)
+  return parts[0] + parts[1]
+
+def _numcomponents(name, srcpath):
+  parts = srcpath.path.partition("/%s/" % name)
+  return len(parts[0].split("/"))
+
+
+def _tar_module(ctx,files,name):
+
+    if len(files) == 0:
+      print ("%s has no files"% name)
+      return (None, 0)
+
+    script_file = ctx.new_file('%s_tarscript.sh' % (name))
+    srcfiles = []
+    # assert that the dirpath is always the same.
+    for src in files:
+      srcfiles.append(src)
+
+    numcomponents = _numcomponents(name, srcfiles[0])
+    dirpath = _get_dirpath(name, srcfiles[0])
+
+    for src in files:
+      src_numcomponents = _numcomponents(name, src)
+      if src_numcomponents != numcomponents:
+        fail("num components didnt match; %d vs %d" % (numcomponents, src_numcomponents))
+
+      src_dirpath = _get_dirpath(name, src)
+      if src_dirpath != dirpath:
+        fail("Dirpaths didnt match; %s vs %s" % (dirpath, src_dirpath))
+
+    tarball = '%s_tarfile.tar' % name
+    tarball_file = ctx.new_file(tarball)
+
+
+    source_files = []
+
+    inputs = []
+    outputs = []
+    for src in files:
+        inputs.append(src)
+        source_files.append(src.path)
+
+    script_line = 'tar -hcf %s %s -C %s' % (tarball_file.path, ' '.join(source_files), dirpath)
+    script_lines = []
+    script_lines.append(script_line)
+
+    ctx.file_action(
+        output = script_file,
+        content = '\n'.join(script_lines),
+        executable = True,
+    )
+
+    ctx.action(
+        mnemonic = 'TarNodeModule',
+        inputs = inputs + [script_file],
+        outputs = [tarball_file],
+        command = script_file.path,
+    )
+
+    return (tarball_file, numcomponents)
+
 
 def _node_module_impl(ctx):
     name = _get_module_name(ctx)
@@ -167,11 +231,18 @@ def _node_module_impl(ctx):
         dst = ctx.new_file("%s/%s" % (name, _get_path_for_module_file(ctx, root_file, src, sourcemap)))
         outputs.append(_copy_file(ctx, src, dst))
 
+
+    depset_outputs = depset(outputs)
+    tarball_file, num_components = _tar_module(ctx, depset_outputs, name)
+
+
     return struct(
-        files = depset(outputs),
+        files = depset_outputs,
         node_module = struct(
             identifier = name.replace(ctx.attr.separator, '_'),
             name = name,
+            tarball = tarball_file,
+            num_components = num_components,
             version = ctx.attr.version,
             url = ctx.attr.url,
             sha1 = ctx.attr.sha1,
@@ -181,7 +252,7 @@ def _node_module_impl(ctx):
             root = root_file,
             sourcemap = sourcemap,
             index = index_file,
-            files = depset(outputs),
+            files = depset_outputs,
             sources = depset(files),
             transitive_deps = _get_transitive_modules(ctx.attr.deps, "transitive_deps"),
             transitive_dev_deps = _get_transitive_modules(ctx.attr.dev_deps, "transitive_dev_deps"),

@@ -18,7 +18,7 @@ def mocha_test(
         # Test visibility
         visibility = None,
         #symlink
-        symlink = False,
+        tarcopy = False,
         # Remainder of args go to 'node_module'
         **kwargs):
 
@@ -38,14 +38,14 @@ def mocha_test(
 
     node_modules(
         name = name + "_modules",
-        target = name + "_modules",
+        target = name + "_files",
         visibility = visibility,
         deps = deps + [name + "_module"],
-        symlink = symlink
+        tarcopy = tarcopy
     )
 
     entrypoint = [
-        "%s_modules" % name,
+        "%s_files" % name,
         "node_modules"
     ]
     
@@ -54,6 +54,7 @@ def mocha_test(
         entrypoint.append(PACKAGE_NAME)
     entrypoint.append("%s_module" % name)
     
+    print (" ".join(args + ["/".join(entrypoint)]))
     native.sh_test(
         name = name,
         srcs = [script],
