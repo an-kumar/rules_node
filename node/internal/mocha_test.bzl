@@ -54,7 +54,6 @@ def mocha_test(
         entrypoint.append(PACKAGE_NAME)
     entrypoint.append("%s_module" % name)
     
-    print (" ".join(args + ["/".join(entrypoint)]))
     native.sh_test(
         name = name,
         srcs = [script],
