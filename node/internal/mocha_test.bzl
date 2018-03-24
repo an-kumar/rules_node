@@ -18,7 +18,7 @@ def mocha_test(
         # Test visibility
         visibility = None,
         #symlink
-        tarcopy = False,
+        tarcopy = True,
         # Remainder of args go to 'node_module'
         **kwargs):
 
