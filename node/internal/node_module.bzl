@@ -165,7 +165,7 @@ def _tar_module(ctx,files,name):
     outputs = []
     for src in files:
         inputs.append(src)
-        source_files.append(src.path)
+        source_files.append("'%s'" % src.path)
 
     script_line = 'tar -hcf %s %s -C %s' % (tarball_file.path, ' '.join(source_files), dirpath)
     script_lines = []
